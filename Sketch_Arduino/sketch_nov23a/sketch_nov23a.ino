@@ -11,9 +11,9 @@ float y = 0; //valore rampa
 float ymax = 0; //max
 bool ramp_active = false; //flag 
 bool flag_communication = false;
-char command[30] = "";
+String command = "";
 bool flag_command = false, flag_baud_rate = false, flag_232 = false, flag_cof = false;
-
+int start_communication = 0;
 
 void setup() {
   // put your setup code here, to run once:
@@ -24,7 +24,6 @@ void setup() {
 }
 
 void loop() {
-  flag_command = false;  //reset flag di comando
   // put your main code here, to run repeatedly:
   if(digitalRead(PIN_RESET) == HIGH){
     t_start_ramp = millis();
@@ -53,7 +52,7 @@ void loop() {
   
   if (Serial.available()) {           //seriale funziona?
         if(!flag_communication){     
-          int start_communication = Serial.read();
+          start_communication = Serial.read();
           if (start_communication == 18 || start_communication == 2){
             Serial.println("Comunicazione inizializzata");
             flag_communication = true;
@@ -63,13 +62,17 @@ void loop() {
         }
       if(flag_communication){
         command = Serial.readStringUntil(')');
+        command.trim();
+        command.replace(" ", "");
+        command += ')';
+        command.trim();
         flag_command = true;  //flag per eseguire il comando
       }
     }
 
 
   if (flag_command == true){
-    if(command == "BDR6,2, 1(x)"){
+    if(command == "BDR6,2,1(x)"){
       flag_baud_rate = true;
       Serial.println("Baud rate settato");
     }
@@ -83,14 +86,16 @@ void loop() {
     }
 
     if (flag_baud_rate && flag_232 && flag_cof){
-      if (command == "MSV?3,1(x)"){
-        
-      }
+      if (command == "MSV?3,1(x)")
+        Serial.print(ymax);
+      
+      if(command == "CLV(x)")
+        ymax = 0;
     }
     else{
-      Serial.println("Setting non terminato")
+      Serial.println("Setting non terminato");
     }
-
+    flag_command = false;  //reset flag di comando
     }
 
   }
