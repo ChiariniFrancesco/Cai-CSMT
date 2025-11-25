@@ -24,9 +24,8 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  // Simulazione rampa in base al tempo passato
   if(digitalRead(PIN_RESET) == HIGH){
-    t_start_ramp = millis();
     count = 0;
     y = 0;
     ymax = 0;
@@ -34,6 +33,7 @@ void loop() {
   }
 
   if(digitalRead(PIN_RAMP) == HIGH){
+    t_start_ramp = millis();
     ramp_active = true;
   }
 
@@ -50,6 +50,8 @@ void loop() {
     
   }
   
+  // Gestione comunicazione seriale
+
   if (Serial.available()) {           //seriale funziona?
         if(!flag_communication){     
           start_communication = Serial.read();
