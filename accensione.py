@@ -9,9 +9,7 @@ time.sleep(1)
 
 def lancia_script(path):
     result = subprocess.run(
-        ["python3", path],
-        capture_output=True,
-        text=True
+        ["python3", path]
     )
 
     return result.returncode
@@ -31,4 +29,5 @@ time.sleep(1)
 manda(b"COF0(x)")
 time.sleep(1)
 
+lancia_script("acquisizione_massimo.py")
 
