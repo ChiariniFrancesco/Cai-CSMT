@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 
+
 const API_BASE = 'http://localhost:8000/api'
 
 export default function App() {
@@ -157,10 +158,11 @@ export default function App() {
 
   // ==================== RENDER ====================
 
+
   return (
     <div className="container">
       <header className="header">
-        <h1>🔧 MVD2555 Configuration System</h1>
+        <h1>CAI Mountain Gear Testing ⛰️</h1>
         <p>Gestisci configurazioni con presets salvati</p>
       </header>
 

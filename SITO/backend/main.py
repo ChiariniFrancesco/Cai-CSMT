@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
 
 # Crea FastAPI app
 app = FastAPI(
-    title="MVD2555 Configuration System",
+    title="CAI Mountain Gear Testing",
     description="API per gestire configurazioni con preset salvate",
     version="1.0.0",
     lifespan=lifespan
