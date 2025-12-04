@@ -1,0 +1,31 @@
+# File di sistema macOS
+.DS_Store
+
+# Ambiente virtuale Python
+.venv/
+
+# Cache di Python
+__pycache__/
+*.py[cod]
+
+# File di log
+*.log
+
+# Directory di build e distribuzione
+build/
+dist/
+*.egg-info/
+
+# File di configurazione locali o ambienti
+.env
+.env.*
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE e editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
