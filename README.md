@@ -97,5 +97,3 @@ echo "serviceAccountKey.json" >> .gitignore
 - Creare account Google per **Firestore**  
 - Provare a fare una versione che non abbia bisogno di Firestore → ✅ **V2.1 done**
 ```
-
-Vuoi che aggiunga una sezione introduttiva con scopo e requisiti del progetto (es. Python, Node.js, npm)?
