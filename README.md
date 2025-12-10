@@ -96,4 +96,7 @@ echo "serviceAccountKey.json" >> .gitignore
 
 - Creare account Google per **Firestore**  
 - Provare a fare una versione che non abbia bisogno di Firestore → ✅ **V2.1 done**
+- fare una v2.2 dove abbiamo nel client un tast conferma 1 e conferma 2 per sapere quando iniza e quando finisce la rilevazione del piccho
+- fare v 2.3 dove a differenza della 2.2 nmanteniamo un tasto e il sistema tiene traccia di tutti i piacchi e della time sereis del segnale e l'operatore supponiamo che faccia i test. su un'unica configurazione, allora la mette solo una volta e a posteriori si analizzeranno i vari picchi si troveranno x picchi corrispondenti a x rielvazion ie si associeranno i loro timestamps alla configurazione e creeraznno le rilevazioni
 ```
+
