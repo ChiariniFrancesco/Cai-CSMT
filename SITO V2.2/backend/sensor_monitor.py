@@ -1,6 +1,8 @@
 """
-backend/sensor_monitor.py - V2.2 CORRETTO
+backend/sensor_monitor.py - V2.2 CORRETTO (CON LOOP DI LETTURA)
 Monitor per ascolto CONTINUO del sensore MVD2555 collegato al Raspberry
+
+ADESSO: Loop che legge ogni 2ms e accumula i dati!
 """
 
 import asyncio
@@ -8,6 +10,8 @@ import logging
 from datetime import datetime
 from typing import Optional, Dict, Any
 import random
+import threading
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +21,7 @@ class SensorMonitor:
     
     FLUSSO:
     1. CONFERMA form → start_monitoring()
+       └─ Avvia THREAD in background che legge ogni 2ms
     2. Backend ASCOLTA continuamente il sensore
     3. Operatore effettua caduta
     4. Operatore preme "HO FATTO LA CADUTA" → stop_monitoring()
@@ -28,7 +33,7 @@ class SensorMonitor:
         self.power_readings: list = []
         self.start_time: Optional[float] = None
         self.config: Dict[str, Any] = {}
-        self.monitoring_task = None
+        self.monitoring_thread: Optional[threading.Thread] = None
         
     def set_config(self, corda: str, assicuratore: str, operatore: str):
         """Salva la configurazione"""
@@ -43,8 +48,8 @@ class SensorMonitor:
         """
         INIZIO ASCOLTO sensore MVD2555
         
-        Il sensore è collegato al Raspberry via seriale
-        Legge dati continuamente ogni 2ms circa
+        Avvia UN THREAD in background che legge il sensore ogni 2ms
+        Il thread accumula i dati in self.power_readings
         """
         if self.is_monitoring:
             logger.warning("⚠️ Monitoraggio già in corso")
@@ -52,7 +57,7 @@ class SensorMonitor:
         
         self.is_monitoring = True
         self.power_readings = []
-        self.start_time = datetime.now().timestamp()
+        self.start_time = time.time()
         
         logger.info(f"""
         🔊 ===============================
@@ -66,28 +71,51 @@ class SensorMonitor:
         🔊 ===============================
         """)
         
-        # Avvia thread di lettura sensore
-        # In realtà questo avviene in background continuamente
-        # Nel nostro test simuleremo con dati fake
+        # ✅ AVVIA THREAD DI LETTURA IN BACKGROUND
+        self.monitoring_thread = threading.Thread(target=self._read_loop, daemon=True)
+        self.monitoring_thread.start()
+        logger.info("🚀 Thread di lettura sensore avviato")
+    
+    def _read_loop(self):
+        """
+        LOOP IN BACKGROUND che legge il sensore ogni 2ms
+        Accumula i dati finché is_monitoring == True
+        """
+        logger.info("🔄 Loop di lettura avviato")
+        
+        while self.is_monitoring:
+            try:
+                # Leggi un valore dal sensore (SIMULATO o REALE)
+                power = self.read_sensor()
+                
+                # Accumula nel record
+                self.add_reading(power)
+                
+                # Attendi 2ms prima della prossima lettura
+                time.sleep(0.002)
+                
+            except Exception as e:
+                logger.error(f"❌ Errore in loop lettura: {e}")
+                break
+        
+        logger.info(f"🛑 Loop di lettura terminato. Letture totali: {len(self.power_readings)}")
     
     def read_sensor(self) -> float:
         """
         Legge un valore dal sensore MVD2555
         
-        REALE: legge da seriale (pyserial)
-        TEST: genera dati fake con picchi casuali
+        SIMULAZIONE: genera dati fake realistici
+        REALE: legge da pyserial
         """
         
-        # SIMULAZIONE per testing
-        # In produzione: leggi da pyserial
-        
-        # Baseline potenza (20-70 N)
+        # ========== SIMULAZIONE ==========
+        # Baseline potenza (20-70 N a riposo)
         basePower = random.random() * 50 + 20
         
-        # Rumore casuale
+        # Rumore casuale ±50N
         noisePower = basePower + (random.random() * 100 - 50)
         
-        # Assicura range 0-500
+        # Assicura range 0-500 N
         power = max(0, min(500, noisePower))
         
         return power
@@ -98,7 +126,7 @@ class SensorMonitor:
             return
         
         reading = {
-            "timestamp": datetime.now().timestamp(),
+            "timestamp": time.time(),
             "value": round(power, 2)
         }
         
@@ -109,7 +137,7 @@ class SensorMonitor:
         FINE ASCOLTO sensore
         Operatore ha premuto "HO FATTO LA CADUTA"
         
-        Analizza i dati raccolti e trova il picco
+        Ferma il thread e analizza i dati raccolti
         """
         
         if not self.is_monitoring:
@@ -118,23 +146,24 @@ class SensorMonitor:
         
         self.is_monitoring = False
         
+        # Aspetta che il thread termini (max 100ms)
+        if self.monitoring_thread:
+            self.monitoring_thread.join(timeout=0.1)
+            logger.info("✅ Thread di lettura terminato")
+        
         logger.info(f"""
         ⛔ ===============================
         ⛔ FINE ASCOLTO SENSORE MVD2555
         ⛔ ===============================
         ⛔ Timestamp fine: {datetime.now().isoformat()}
-        ⛔ Letture totali: {len(self.power_readings)}
+        ⛔ Letture totali RACCOLTE: {len(self.power_readings)}
         ⛔ ===============================
         """)
         
-        # Analizza dati raccolti
+        # Analizza i dati raccolti
         if len(self.power_readings) == 0:
             logger.warning("⚠️ Nessun dato raccolto dal sensore")
             return None
-        
-        # SIMULAZIONE: generiamo dati fake
-        # In produzione, analizzeremmo i dati reali raccolti
-        self._simulate_sensor_data()
         
         # Trova il picco massimo
         max_power = 0
@@ -147,8 +176,11 @@ class SensorMonitor:
                 max_index = i
                 max_timestamp = reading['timestamp']
         
-        # Calcola offset
+        # Calcola offset in ms dalla caduta
         offset_ms = int((max_timestamp - self.start_time) * 1000)
+        
+        # Durata totale ascolto
+        durata_ms = int((self.power_readings[-1]['timestamp'] - self.start_time) * 1000)
         
         logger.info(f"""
         📊 ANALISI COMPLETATA:
@@ -157,7 +189,7 @@ class SensorMonitor:
         ├─ Indice picco: {max_index}
         ├─ Timestamp picco: {datetime.fromtimestamp(max_timestamp).isoformat()}
         ├─ Offset dalla caduta: {offset_ms}ms
-        ├─ Durata ascolto: {int((self.power_readings[-1]['timestamp'] - self.start_time) * 1000)}ms
+        ├─ Durata ascolto: {durata_ms}ms
         └─ Status: ✅ CADUTA RILEVATA
         """)
         
@@ -170,46 +202,15 @@ class SensorMonitor:
             "offset_ms_dalla_caduta": offset_ms,
             "timestamp_inizio_ascolto": self.start_time,
             "timestamp_fine_ascolto": self.power_readings[-1]['timestamp'],
-            "durata_totale_ms": int((self.power_readings[-1]['timestamp'] - self.start_time) * 1000),
+            "durata_totale_ms": durata_ms,
             "tutti_i_dati": self.power_readings
         }
-    
-    def _simulate_sensor_data(self):
-        """
-        SIMULAZIONE: genera dati fake realistici
-        
-        In produzione, i dati arrivano dal sensore MVD2555 reale
-        Questo metodo simula il sensore per testing
-        """
-        
-        # Se non abbiamo ancora dati, generali
-        if len(self.power_readings) < 100:
-            # Genera ~100-200 letture
-            num_readings = random.randint(100, 200)
-            
-            for i in range(num_readings):
-                # Baseline
-                base = 30 + (random.random() * 40)
-                
-                # Aggiungi picco nel mezzo (simulando la caduta)
-                if 30 < i < 80:  # Picco intorno al 50-60% del tempo
-                    # Aumenta verso il picco
-                    progress = (i - 30) / 50
-                    peak_height = 350 + (random.random() * 100)
-                    power = base + (peak_height * progress)
-                else:
-                    power = base
-                
-                self.power_readings.append({
-                    "timestamp": self.start_time + (i * 0.002),  # 2ms intervallo
-                    "value": round(max(0, min(500, power)), 2)
-                })
     
     def get_status(self) -> Dict[str, Any]:
         """Restituisce lo stato del monitoraggio"""
         return {
             "is_monitoring": self.is_monitoring,
             "letture_raccolte": len(self.power_readings),
-            "durata_s": round((datetime.now().timestamp() - self.start_time), 2) if self.is_monitoring else None,
+            "durata_s": round((time.time() - self.start_time), 2) if self.is_monitoring else None,
             "configurazione": self.config
         }

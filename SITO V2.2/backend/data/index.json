@@ -29,5 +29,7 @@
       "assicuratore": "grigri"
     }
   ],
-  "total": 5
+  "total": 5,
+  "total_cadute": 1,
+  "last_updated": "2025-12-10T12:32:22.611088"
 }
