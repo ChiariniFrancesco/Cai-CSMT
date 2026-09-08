@@ -1,0 +1,6 @@
+no curva ma massimo (oltre soglia e costante dentro intervallo). Se sì: valore rilevata tot N. 
+
+quando clicco salvami il dato -> aggiorna anche .json
+
+
+configurare Raspberry Ansible. Testare fuori da PC. 
