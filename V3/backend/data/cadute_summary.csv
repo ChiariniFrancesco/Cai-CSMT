@@ -1,0 +1,5 @@
+timestamp;corda;assicuratore;operatore;picco_N;offset_ms;durata_ms;letture_totali
+2026-05-02T18:09:57.546976;5;Gri-Gri;pippo;800.0;4129;15372;157
+2026-05-16T19:35:50.940611;10;camp;io;800.0;4030;5435;55
+2026-05-16T19:37:03.640762;20;camp;io;800.0;4032;8247;83
+2026-05-19T17:13:35.939543;10;camp;io;800.0;4031;30826;308

@@ -1,0 +1,16 @@
+[Unit]
+Description=Cai-CSMT Backend (FastAPI + Arduino sensor monitor)
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/Cai-CSMT/backend
+ExecStart=/usr/bin/python3 main.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
